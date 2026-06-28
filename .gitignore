@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Flutter
+mobile/build/
+mobile/.dart_tool/
+mobile/.packages
+mobile/.pub/
+mobile/pubspec.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+*.local
+
+# Firebase
+firebase-service-account.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+mysql_data/
