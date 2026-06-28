@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
+import '../services/api_client.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 
@@ -32,7 +34,19 @@ class AuthState {
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthService _authService;
 
-  AuthNotifier(this._authService) : super(const AuthState());
+  StreamSubscription<void>? _authSub;
+
+  AuthNotifier(this._authService) : super(const AuthState()) {
+    _authSub = ApiClient.onAuthExpired.listen((_) {
+      state = const AuthState(status: AuthStatus.unauthenticated);
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
+  }
 
   Future<void> tryAutoLogin() async {
     state = state.copyWith(status: AuthStatus.loading);

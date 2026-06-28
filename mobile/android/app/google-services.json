@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "698937124170",
+    "project_id": "my-application-56e1f",
+    "storage_bucket": "my-application-56e1f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:698937124170:android:30a76e3f12e6f7a7548db3",
+        "android_client_info": {
+          "package_name": "com.example.myapplication"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD_uvOnnEIr0hw5QMgVfHfSeyQKbQ2OWZA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:698937124170:android:6d874bd2bf35262f548db3",
+        "android_client_info": {
+          "package_name": "com.example.scheduler_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD_uvOnnEIr0hw5QMgVfHfSeyQKbQ2OWZA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

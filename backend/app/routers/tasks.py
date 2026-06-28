@@ -1,3 +1,4 @@
+from datetime import date
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -34,7 +35,10 @@ async def create_task(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    task = Task(user_id=user.id, **payload.model_dump())
+    data = payload.model_dump()
+    if isinstance(data.get("due_date"), str):
+        data["due_date"] = date.fromisoformat(data["due_date"])
+    task = Task(user_id=user.id, **data)
     db.add(task)
     await db.commit()
     await db.refresh(task)
@@ -53,7 +57,10 @@ async def update_task(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    for key, value in payload.model_dump(exclude_none=True).items():
+    data = payload.model_dump(exclude_none=True)
+    if isinstance(data.get("due_date"), str):
+        data["due_date"] = date.fromisoformat(data["due_date"])
+    for key, value in data.items():
         setattr(task, key, value)
 
     await db.commit()

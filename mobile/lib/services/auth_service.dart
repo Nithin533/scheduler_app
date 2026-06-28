@@ -39,7 +39,7 @@ class AuthService {
     try {
       final res = await _api.get('/users/me');
       return User.fromJson(res.data as Map<String, dynamic>);
-    } catch (_) {
+    } catch (e) {
       await SecureStorage.clearAll();
       return null;
     }
@@ -53,18 +53,20 @@ class AuthService {
         'fcm_token': token,
         'platform': 'android',
       });
-    } catch (_) {}
+    } catch (e) {
+      // Device registration failure is non-critical
+    }
   }
 
   Future<void> logout() async {
-    await SecureStorage.clearAll();
+    await SecureStorage.deleteToken();
   }
 
   Future<UserProfile?> getProfile() async {
     try {
       final res = await _api.get('/users/me/profile');
       return UserProfile.fromJson(res.data as Map<String, dynamic>);
-    } catch (_) {
+    } catch (e) {
       return null;
     }
   }

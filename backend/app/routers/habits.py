@@ -1,3 +1,4 @@
+from datetime import date
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -36,7 +37,6 @@ async def log_habit(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    from datetime import date
     log_date = date.fromisoformat(payload.log_date) if isinstance(payload.log_date, str) else payload.log_date
 
     log = HabitLog(

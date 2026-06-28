@@ -8,6 +8,8 @@ import 'screens/home/home_screen.dart';
 import 'screens/checklist/end_of_day_checklist_screen.dart';
 import 'services/notification_service.dart';
 
+final navigatorKey = GlobalKey<NavigatorState>();
+
 class SchedulerApp extends ConsumerWidget {
   const SchedulerApp({super.key});
 
@@ -16,6 +18,7 @@ class SchedulerApp extends ConsumerWidget {
     return MaterialApp(
       title: 'Scheduler App',
       debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
       theme: ThemeData(
         colorSchemeSeed: const Color(0xFF6C63FF),
         brightness: Brightness.light,
@@ -39,8 +42,6 @@ class AuthGate extends ConsumerStatefulWidget {
 }
 
 class _AuthGateState extends ConsumerState<AuthGate> {
-  final _navigatorKey = GlobalKey<NavigatorState>();
-
   @override
   void initState() {
     super.initState();
@@ -48,14 +49,12 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       ref.read(authStateProvider.notifier).tryAutoLogin();
     });
 
-    // Handle notification taps
     NotificationService.onNotificationTap = (data) {
-      if (data == null || _navigatorKey.currentContext == null) return;
+      if (data == null || navigatorKey.currentContext == null) return;
 
       final type = data['type'];
       if (type == 'daily_review') {
-        // Navigate to home screen which shows today's schedule
-        Navigator.of(_navigatorKey.currentContext!).push(
+        Navigator.of(navigatorKey.currentContext!).push(
           MaterialPageRoute(
             builder: (_) => const HomeScreen(),
           ),

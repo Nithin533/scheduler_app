@@ -9,6 +9,23 @@ class HabitTile extends ConsumerWidget {
 
   const HabitTile({super.key, required this.habit});
 
+  IconData _iconForHabit(String? icon) {
+    if (icon == null) return Icons.loop;
+    final codepoint = int.tryParse(icon);
+    if (codepoint != null) {
+      return IconData(codepoint, fontFamily: 'MaterialIcons');
+    }
+    switch (icon) {
+      case 'school': return Icons.school;
+      case 'work': return Icons.work;
+      case 'fitness_center': return Icons.fitness_center;
+      case 'book': return Icons.book;
+      case 'restaurant': return Icons.restaurant;
+      case 'bedtime': return Icons.bedtime;
+      default: return Icons.loop;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final today = DateTime.now().toIso8601String().split('T').first;
@@ -19,7 +36,7 @@ class HabitTile extends ConsumerWidget {
         leading: CircleAvatar(
           backgroundColor: Theme.of(context).colorScheme.primaryContainer,
           child: Icon(
-            habit.icon != null ? IconData(int.parse(habit.icon!), fontFamily: 'MaterialIcons') : Icons.loop,
+            _iconForHabit(habit.icon),
             color: Theme.of(context).colorScheme.primary,
           ),
         ),

@@ -12,10 +12,14 @@ class HabitNotifier extends StateNotifier<List<Habit>> {
   HabitNotifier() : super([]);
 
   Future<void> loadHabits() async {
-    final res = await _api.get('/habits');
-    state = (res.data as List)
-        .map((e) => Habit.fromJson(e as Map<String, dynamic>))
-        .toList();
+    try {
+      final res = await _api.get('/habits');
+      state = (res.data as List)
+          .map((e) => Habit.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      state = [];
+    }
   }
 
   Future<Habit> createHabit(Map<String, dynamic> data) async {

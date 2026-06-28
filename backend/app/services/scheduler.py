@@ -1,5 +1,5 @@
 import json
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -35,10 +35,10 @@ class SchedulerService:
         habits = await self._get_active_habits(user.id)
 
         # 5. Build time blocks
-        day_start = datetime.combine(target_date, time(6, 0))   # 6 AM
-        day_end = datetime.combine(target_date, time(22, 0))    # 10 PM
-        sleep_start = datetime.combine(target_date, time(22, 0))
-        sleep_end = datetime.combine(target_date + timedelta(days=1), time(6, 0))
+        day_start = datetime.combine(target_date, time(6, 0), tzinfo=timezone.utc)   # 6 AM
+        day_end = datetime.combine(target_date, time(22, 0), tzinfo=timezone.utc)    # 10 PM
+        sleep_start = datetime.combine(target_date, time(22, 0), tzinfo=timezone.utc)
+        sleep_end = datetime.combine(target_date + timedelta(days=1), time(6, 0), tzinfo=timezone.utc)
 
         blocks: list[dict] = []
         mandatory_block = False
@@ -92,7 +92,7 @@ class SchedulerService:
                 current_time = event_end
 
         # Add lunch (12:00-12:45)
-        lunch_start = max(current_time, datetime.combine(target_date, time(12, 0)))
+        lunch_start = max(current_time, datetime.combine(target_date, time(12, 0), tzinfo=timezone.utc))
         lunch_end = lunch_start + timedelta(minutes=45)
         if lunch_end <= day_end:
             if lunch_start > current_time:
@@ -105,7 +105,7 @@ class SchedulerService:
             current_time = lunch_end
 
         # Add dinner (19:00-19:30)
-        dinner_start = max(current_time, datetime.combine(target_date, time(19, 0)))
+        dinner_start = max(current_time, datetime.combine(target_date, time(19, 0), tzinfo=timezone.utc))
         dinner_end = dinner_start + timedelta(minutes=30)
         if dinner_end <= day_end:
             if dinner_start > current_time:
@@ -164,6 +164,8 @@ class SchedulerService:
 
         if existing:
             schedule = existing
+            # Eagerly load items to avoid MissingGreenlet
+            await self.db.refresh(schedule, ['items'])
             # Remove old items
             for item in schedule.items:
                 await self.db.delete(item)
@@ -202,7 +204,14 @@ class SchedulerService:
         schedule.is_balanced = total_scheduled <= total_free * 0.8  # Max 80% utilization
 
         await self.db.commit()
-        await self.db.refresh(schedule)
+
+        # Reload with items eagerly loaded for response serialization
+        result = await self.db.execute(
+            select(DailySchedule)
+            .where(DailySchedule.id == schedule.id)
+            .options(selectinload(DailySchedule.items))
+        )
+        schedule = result.scalar_one()
 
         # Generate end-of-day checklist
         await self._generate_checklist(user, schedule)
@@ -213,7 +222,7 @@ class SchedulerService:
         return schedule
 
     async def _get_fixed_events(self, user_id: int, target_date: date) -> list[FixedEvent]:
-        weekday = target_date.weekday()  # 0=Mon, 6=Sun
+        weekday = (target_date.isoweekday() % 7)  # 0=Sun .. 6=Sat (matching DB convention)
         result = await self.db.execute(
             select(FixedEvent).where(
                 FixedEvent.user_id == user_id,
@@ -247,8 +256,12 @@ class SchedulerService:
         )
         self.db.add(schedule)
         await self.db.commit()
-        await self.db.refresh(schedule)
-        return schedule
+        result = await self.db.execute(
+            select(DailySchedule)
+            .where(DailySchedule.id == schedule.id)
+            .options(selectinload(DailySchedule.items))
+        )
+        return result.scalar_one()
 
     async def _generate_checklist(self, user: User, schedule: DailySchedule):
         existing_result = await self.db.execute(
@@ -284,7 +297,7 @@ class SchedulerService:
                 continue
 
             reminder_time = item.start_time - timedelta(minutes=15)
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
 
             if reminder_time > now:
                 reminder = Reminder(

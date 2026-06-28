@@ -24,7 +24,7 @@ class _HabitTrackerScreenState extends ConsumerState<HabitTrackerScreen> {
   void _showAddDialog() {
     final nameCtl = TextEditingController();
     final targetCtl = TextEditingController();
-    String unit = 'g';
+    final selectedUnit = ValueNotifier<String>('g');
 
     showDialog(
       context: context,
@@ -48,13 +48,18 @@ class _HabitTrackerScreenState extends ConsumerState<HabitTrackerScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                DropdownButton<String>(
-                  value: unit,
-                  items: 'g,tbsp,cups,ml,servings'
-                      .split(',')
-                      .map((u) => DropdownMenuItem(value: u, child: Text(u)))
-                      .toList(),
-                  onChanged: (v) => unit = v!,
+                ValueListenableBuilder<String>(
+                  valueListenable: selectedUnit,
+                  builder: (ctx, unit, _) => DropdownButton<String>(
+                    value: unit,
+                    items: 'g,tbsp,cups,ml,servings'
+                        .split(',')
+                        .map((u) => DropdownMenuItem(value: u, child: Text(u)))
+                        .toList(),
+                    onChanged: (v) {
+                      if (v != null) selectedUnit.value = v;
+                    },
+                  ),
                 ),
               ],
             ),
@@ -69,7 +74,7 @@ class _HabitTrackerScreenState extends ConsumerState<HabitTrackerScreen> {
               ref.read(habitProvider.notifier).createHabit({
                 'name': nameCtl.text.trim(),
                 'target_value': double.tryParse(targetCtl.text),
-                'unit': unit,
+                'unit': selectedUnit.value,
                 'frequency': 'daily',
               });
               Navigator.pop(ctx);

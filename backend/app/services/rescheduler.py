@@ -39,14 +39,18 @@ class ReschedulerService:
             if not task or not task.is_flexible:
                 continue
 
-            # Schedule to next day
-            next_day = checklist.checklist_date + timedelta(days=1)
+            # Schedule to next available day
             max_days = 7
+            target_day = checklist.checklist_date + timedelta(days=1)
             for day_offset in range(1, max_days + 1):
-                target_day = checklist.checklist_date + timedelta(days=day_offset)
-                if task.due_date and target_day > task.due_date:
+                candidate = checklist.checklist_date + timedelta(days=day_offset)
+                if task.due_date and candidate > task.due_date:
                     target_day = task.due_date
                     break
+                if not task.due_date:
+                    target_day = candidate
+                    break
+                target_day = candidate
 
             # Record rescheduling
             reschedule_record = RescheduledItem(

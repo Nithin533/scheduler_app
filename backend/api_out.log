@@ -1,0 +1,8 @@
+INFO:     192.168.1.34:45916 - "POST /api/auth/register HTTP/1.1" 500 Internal Server Error
+INFO:     192.168.1.35:55059 - "GET /health HTTP/1.1" 200 OK
+INFO:     192.168.1.34:39294 - "GET /health HTTP/1.1" 200 OK
+INFO:     192.168.1.34:39294 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     192.168.1.34:43688 - "POST /api/auth/register HTTP/1.1" 500 Internal Server Error
+INFO:     192.168.1.34:41996 - "POST /api/auth/register HTTP/1.1" 500 Internal Server Error
+INFO:     192.168.1.34:42008 - "POST /api/auth/register HTTP/1.1" 500 Internal Server Error
+INFO:     192.168.1.34:39518 - "POST /api/auth/register HTTP/1.1" 500 Internal Server Error

@@ -11,7 +11,18 @@ class NotificationService {
   static bool _initialized = false;
 
   /// Callback when user taps a notification
-  static void Function(Map<String, dynamic>? data)? onNotificationTap;
+  static void Function(Map<String, dynamic>? data)? _onNotificationTap;
+  static Map<String, dynamic>? _pendingTapData;
+
+  static void Function(Map<String, dynamic>? data)? get onNotificationTap => _onNotificationTap;
+
+  static set onNotificationTap(void Function(Map<String, dynamic>? data)? callback) {
+    _onNotificationTap = callback;
+    if (_pendingTapData != null) {
+      _onNotificationTap?.call(_pendingTapData);
+      _pendingTapData = null;
+    }
+  }
 
   static Future<void> initialize() async {
     if (_initialized) return;
@@ -50,7 +61,7 @@ class NotificationService {
       initSettings,
       onDidReceiveNotificationResponse: (response) {
         if (response.payload != null) {
-          onNotificationTap?.call({'payload': response.payload});
+          _onNotificationTap?.call({'payload': response.payload});
         }
       },
     );
@@ -64,18 +75,24 @@ class NotificationService {
     // App opened from terminated state via notification
     final initialMessage = await _fcm.getInitialMessage();
     if (initialMessage != null) {
-      _handleTap(initialMessage);
+      if (_onNotificationTap != null) {
+        _handleTap(initialMessage);
+      } else {
+        _pendingTapData = initialMessage.data;
+      }
     }
 
     _initialized = true;
   }
+
+  static int _notificationId = 0;
 
   static void _showForegroundNotification(RemoteMessage message) {
     final notification = message.notification;
     if (notification == null) return;
 
     _localNotifications.show(
-      notification.hashCode,
+      _notificationId++,
       notification.title,
       notification.body,
       const NotificationDetails(
@@ -97,6 +114,7 @@ class NotificationService {
   }
 
   static void _handleTap(RemoteMessage message) {
-    onNotificationTap?.call(message.data);
+    if (onNotificationTap == null) return;
+    onNotificationTap!.call(message.data);
   }
 }

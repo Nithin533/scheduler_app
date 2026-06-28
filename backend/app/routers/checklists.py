@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -38,8 +38,6 @@ async def toggle_checklist_item(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    from datetime import datetime
-
     result = await db.execute(
         select(ChecklistItem).where(ChecklistItem.id == item_id, ChecklistItem.checklist_id == checklist_id)
     )
@@ -48,7 +46,7 @@ async def toggle_checklist_item(
         raise HTTPException(status_code=404, detail="Checklist item not found")
 
     item.is_checked = payload.is_checked
-    item.checked_at = datetime.utcnow() if payload.is_checked else None
+    item.checked_at = datetime.now(timezone.utc) if payload.is_checked else None
 
     await db.commit()
 
@@ -73,9 +71,8 @@ async def complete_checklist(
     if not checklist:
         raise HTTPException(status_code=404, detail="Checklist not found")
 
-    from datetime import datetime
     checklist.is_completed = True
-    checklist.completed_at = datetime.utcnow()
+    checklist.completed_at = datetime.now(timezone.utc)
     await db.commit()
 
     from app.services.rescheduler import ReschedulerService

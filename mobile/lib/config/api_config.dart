@@ -1,16 +1,17 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:io' show Platform;
 
 class ApiConfig {
-  static const String _host = String.fromEnvironment('BASE_URL', defaultValue: '');
+  /// Change this to your machine's LAN IP when testing on a real device.
+  /// Example: '192.168.1.100:8000'
+  /// For Android emulator, 10.0.2.2 maps to host machine's localhost.
+  /// Can be overridden at build time with: --dart-define=BASE_URL=host:port
+  static const String _defaultHost = '10.0.2.2:8000';
+
+  static const String _host = String.fromEnvironment('BASE_URL', defaultValue: _defaultHost);
+
   static String get baseUrl {
-    if (_host.isNotEmpty) {
-      return 'http://$_host/api';
-    }
     if (kIsWeb) return 'http://localhost:8000/api';
-    // Android emulator uses 10.0.2.2 to reach host localhost
-    if (Platform.isAndroid) return 'http://10.0.2.2:8000/api';
-    return 'http://localhost:8000/api';
+    return 'http://$_host/api';
   }
 
   static const Duration timeout = Duration(seconds: 30);

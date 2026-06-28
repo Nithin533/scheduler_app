@@ -55,8 +55,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               selectedIcon: Icon(Icons.checklist),
               label: 'Tasks'),
           NavigationDestination(
-              icon: Icon(Icons.monitoring_outlined),
-              selectedIcon: Icon(Icons.monitoring),
+              icon: Icon(Icons.check_circle_outline),
+              selectedIcon: Icon(Icons.check_circle),
               label: 'Habits'),
           NavigationDestination(
               icon: Icon(Icons.settings_outlined),

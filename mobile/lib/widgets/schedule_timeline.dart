@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/schedule.dart' as models;
+import '../models/schedule.dart' as models;
 import '../utils/date_helpers.dart';
 
 class ScheduleTimeline extends StatelessWidget {

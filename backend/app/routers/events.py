@@ -1,3 +1,4 @@
+from datetime import date, time
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -23,7 +24,16 @@ async def create_event(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    event = FixedEvent(user_id=user.id, **payload.model_dump())
+    data = payload.model_dump()
+    if isinstance(data.get("start_date"), str):
+        data["start_date"] = date.fromisoformat(data["start_date"])
+    if isinstance(data.get("end_date"), str):
+        data["end_date"] = date.fromisoformat(data["end_date"])
+    if isinstance(data.get("start_time"), str):
+        data["start_time"] = time.fromisoformat(data["start_time"])
+    if isinstance(data.get("end_time"), str):
+        data["end_time"] = time.fromisoformat(data["end_time"])
+    event = FixedEvent(user_id=user.id, **data)
     db.add(event)
     await db.commit()
     await db.refresh(event)
@@ -42,7 +52,16 @@ async def update_event(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    for key, value in payload.model_dump(exclude_none=True).items():
+    data = payload.model_dump(exclude_none=True)
+    if isinstance(data.get("start_date"), str):
+        data["start_date"] = date.fromisoformat(data["start_date"])
+    if isinstance(data.get("end_date"), str):
+        data["end_date"] = date.fromisoformat(data["end_date"])
+    if isinstance(data.get("start_time"), str):
+        data["start_time"] = time.fromisoformat(data["start_time"])
+    if isinstance(data.get("end_time"), str):
+        data["end_time"] = time.fromisoformat(data["end_time"])
+    for key, value in data.items():
         setattr(event, key, value)
 
     await db.commit()

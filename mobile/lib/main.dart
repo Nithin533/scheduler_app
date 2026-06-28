@@ -6,8 +6,11 @@ import 'services/notification_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize push notifications
-  await NotificationService.initialize();
+  try {
+    await NotificationService.initialize();
+  } catch (e) {
+    debugPrint('NotificationService initialization failed: $e');
+  }
 
   runApp(const ProviderScope(child: SchedulerApp()));
 }

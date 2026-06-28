@@ -1,5 +1,5 @@
-from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, Date, Boolean, Enum, TINYINT, DECIMAL, ForeignKey
+from datetime import datetime, timezone
+from sqlalchemy import Column, Integer, String, DateTime, Date, Boolean, Enum, SmallInteger, DECIMAL, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -9,7 +9,7 @@ class DailySchedule(Base):
     __tablename__ = "daily_schedules"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     schedule_date = Column(Date, nullable=False)
 
@@ -18,11 +18,13 @@ class DailySchedule(Base):
     total_scheduled_hours = Column(DECIMAL(4, 1))
     is_balanced = Column(Boolean, comment="health check passed")
 
-    generated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    generated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     user = relationship("User", back_populates="schedules")
     items = relationship("ScheduleItem", back_populates="schedule", cascade="all, delete-orphan")
+
+    __table_args__ = (UniqueConstraint("user_id", "schedule_date", name="uq_daily_schedule"),)
 
 
 class ScheduleItem(Base):
@@ -48,9 +50,9 @@ class ScheduleItem(Base):
 
     status = Column(Enum("scheduled", "completed", "missed", "rescheduled", name="item_status"), nullable=False, default="scheduled")
     completed_at = Column(DateTime)
-    priority_at_schedule = Column(TINYINT)
+    priority_at_schedule = Column(SmallInteger)
 
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     schedule = relationship("DailySchedule", back_populates="items")
     rescheduled_records = relationship("RescheduledItem", back_populates="schedule_item", cascade="all, delete-orphan")
@@ -66,6 +68,6 @@ class RescheduledItem(Base):
     rescheduled_to_date = Column(Date, nullable=False)
 
     reason = Column(Enum("not_completed", "conflict", "user_request", name="reschedule_reason"), nullable=False, default="not_completed")
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     schedule_item = relationship("ScheduleItem", back_populates="rescheduled_records")

@@ -109,11 +109,7 @@ async def check_and_send_reminders(db: AsyncSession):
         data = {}
 
         if reminder.type == "pre_task":
-            # Get the item title for a meaningful notification
-            schedule_item = await db.execute(
-                select(Reminder).where(Reminder.id == reminder.id)
-            )
-            title = "⏰ Upcoming Activity"
+            title = "Upcoming Activity"
             body = "Your scheduled activity is starting soon"
             data = {"type": "task", "schedule_item_id": str(reminder.schedule_item_id or "")}
 

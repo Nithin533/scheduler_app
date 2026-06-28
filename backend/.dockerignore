@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+.env.example
+.git/
+.gitignore
+*.md
+.vscode/
+.idea/
+mysql_data/
+Dockerfile
+docker-compose.yml
+firebase-service-account.json
