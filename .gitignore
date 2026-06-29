@@ -25,6 +25,7 @@ mobile/pubspec.lock
 
 # Firebase
 firebase-service-account.json
+google-services.json
 
 # OS
 .DS_Store
