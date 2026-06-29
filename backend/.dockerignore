@@ -8,7 +8,7 @@ __pycache__/
 *.md
 .vscode/
 .idea/
-mysql_data/
+pg_data/
 Dockerfile
 docker-compose.yml
 firebase-service-account.json

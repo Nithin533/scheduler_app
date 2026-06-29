@@ -1,5 +1,5 @@
--- Scheduler App - MySQL Schema
--- Run this to create the database and all tables
+-- Scheduler App - PostgreSQL Schema (reference only)
+-- Tables are auto-created by SQLAlchemy on startup
 
 CREATE DATABASE IF NOT EXISTS scheduler_app
   CHARACTER SET utf8mb4

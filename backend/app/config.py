@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    database_url: str = "mysql+aiomysql://root:password@localhost:3306/scheduler_app"
+    database_url: str = "postgresql+asyncpg://postgres:password@localhost:5432/scheduler_app"
     secret_key: str = "your-secret-key-change-in-production"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24  # 24 hours

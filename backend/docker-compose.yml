@@ -1,19 +1,17 @@
-version: "3.9"
-
 services:
   db:
-    image: mysql:8.0
+    image: postgres:16
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: scheduler_app
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: scheduler_app
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ../docs/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -24,7 +22,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: mysql+aiomysql://root:password@db:3306/scheduler_app
+      DATABASE_URL: postgresql+asyncpg://postgres:password@db:5432/scheduler_app
       SECRET_KEY: change-this-in-production
     depends_on:
       db:
@@ -37,4 +35,4 @@ services:
           target: /app
 
 volumes:
-  mysql_data:
+  pg_data:
