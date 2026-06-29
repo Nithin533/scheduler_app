@@ -50,7 +50,7 @@ class UserProfile {
     userId: json['user_id'] as int,
     age: json['age'] as int?,
     occupation: json['occupation'] as String?,
-    sleepTargetHours: double.parse(json['sleep_target_hours'].toString()),
+    sleepTargetHours: (json['sleep_target_hours'] as num?)?.toDouble() ?? 8.0,
     hasPartTimeJob: json['has_part_time_job'] as bool? ?? false,
     createdAt: DateTime.parse(json['created_at'] as String),
   );

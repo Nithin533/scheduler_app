@@ -45,14 +45,16 @@ class HabitTile extends ConsumerWidget {
             ? Text('Target: ${habit.targetValue} ${habit.unit ?? ''} ${habit.frequency}')
             : null,
         trailing: FilledButton.tonal(
-          onPressed: () {
-            ref.read(habitProvider.notifier).logHabit(
+          onPressed: () async {
+            await ref.read(habitProvider.notifier).logHabit(
                   habit.id,
                   today,
                 );
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('${habit.name} logged for today')),
-            );
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('${habit.name} logged for today')),
+              );
+            }
           },
           child: const Text('Log'),
         ),

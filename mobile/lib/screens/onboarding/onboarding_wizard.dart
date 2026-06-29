@@ -125,11 +125,11 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
             hobbies: _hobbies,
             skills: _skills,
             goesToGym: _goesToGym,
-            onGoesToGymChanged: (v) => _goesToGym = v,
+            onGoesToGymChanged: (v) => setState(() => _goesToGym = v),
             gymDaysPerWeek: _gymDaysPerWeek,
-            onGymDaysChanged: (v) => _gymDaysPerWeek = v,
+            onGymDaysChanged: (v) => setState(() => _gymDaysPerWeek = v),
             gymDuration: _gymDuration,
-            onGymDurationChanged: (v) => _gymDuration = v,
+            onGymDurationChanged: (v) => setState(() => _gymDuration = v),
           ),
           _GoalsStep(
             longTermGoals: _longTermGoals,
@@ -170,7 +170,7 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
 
 // --- Step Widgets ---
 
-class _BasicInfoStep extends StatelessWidget {
+class _BasicInfoStep extends StatefulWidget {
   final String? occupation;
   final ValueChanged<String?> onOccupationChanged;
   final String workStart, workEnd;
@@ -207,7 +207,52 @@ class _BasicInfoStep extends StatelessWidget {
     required this.onSleepTargetChanged,
   });
 
+  @override
+  State<_BasicInfoStep> createState() => _BasicInfoStepState();
+}
+
+class _BasicInfoStepState extends State<_BasicInfoStep> {
+  late TextEditingController _workStartCtl;
+  late TextEditingController _workEndCtl;
+  late TextEditingController _ptStartCtl;
+  late TextEditingController _ptEndCtl;
+
   static const _dayOptions = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  @override
+  void initState() {
+    super.initState();
+    _workStartCtl = TextEditingController(text: widget.workStart);
+    _workEndCtl = TextEditingController(text: widget.workEnd);
+    _ptStartCtl = TextEditingController(text: widget.partTimeStart);
+    _ptEndCtl = TextEditingController(text: widget.partTimeEnd);
+  }
+
+  @override
+  void didUpdateWidget(_BasicInfoStep oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.workStart != oldWidget.workStart) {
+      _workStartCtl.text = widget.workStart;
+    }
+    if (widget.workEnd != oldWidget.workEnd) {
+      _workEndCtl.text = widget.workEnd;
+    }
+    if (widget.partTimeStart != oldWidget.partTimeStart) {
+      _ptStartCtl.text = widget.partTimeStart;
+    }
+    if (widget.partTimeEnd != oldWidget.partTimeEnd) {
+      _ptEndCtl.text = widget.partTimeEnd;
+    }
+  }
+
+  @override
+  void dispose() {
+    _workStartCtl.dispose();
+    _workEndCtl.dispose();
+    _ptStartCtl.dispose();
+    _ptEndCtl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -224,7 +269,7 @@ class _BasicInfoStep extends StatelessWidget {
               labelText: 'Occupation (e.g., College Student)',
               prefixIcon: Icon(Icons.work_outline),
             ),
-            onChanged: (v) => onOccupationChanged(v),
+            onChanged: (v) => widget.onOccupationChanged(v),
           ),
           const SizedBox(height: 16),
           Text('Work / College Schedule',
@@ -236,8 +281,8 @@ class _BasicInfoStep extends StatelessWidget {
                 child: TextField(
                   decoration: const InputDecoration(
                       labelText: 'Start', prefixText: ''),
-                  controller: TextEditingController(text: workStart),
-                  onChanged: onWorkStartChanged,
+                  controller: _workStartCtl,
+                  onChanged: widget.onWorkStartChanged,
                 ),
               ),
               const SizedBox(width: 12),
@@ -245,8 +290,8 @@ class _BasicInfoStep extends StatelessWidget {
                 child: TextField(
                   decoration:
                       const InputDecoration(labelText: 'End', prefixText: ''),
-                  controller: TextEditingController(text: workEnd),
-                  onChanged: onWorkEndChanged,
+                  controller: _workEndCtl,
+                  onChanged: widget.onWorkEndChanged,
                 ),
               ),
             ],
@@ -255,14 +300,14 @@ class _BasicInfoStep extends StatelessWidget {
           Wrap(
             spacing: 8,
             children: _dayOptions.map((day) {
-              final selected = workDays.contains(day);
+              final selected = widget.workDays.contains(day);
               return FilterChip(
                 label: Text(day),
                 selected: selected,
                 onSelected: (sel) {
-                  final updated = List<String>.from(workDays);
+                  final updated = List<String>.from(widget.workDays);
                   sel ? updated.add(day) : updated.remove(day);
-                  onWorkDaysChanged(updated);
+                  widget.onWorkDaysChanged(updated);
                 },
               );
             }).toList(),
@@ -270,26 +315,26 @@ class _BasicInfoStep extends StatelessWidget {
           const SizedBox(height: 24),
           SwitchListTile(
             title: const Text('Do you have a part-time job?'),
-            value: hasPartTime,
-            onChanged: onHasPartTimeChanged,
+            value: widget.hasPartTime,
+            onChanged: widget.onHasPartTimeChanged,
           ),
-          if (hasPartTime) ...[
+          if (widget.hasPartTime) ...[
             const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(
                   child: TextField(
                     decoration: const InputDecoration(labelText: 'PT Start'),
-                    controller: TextEditingController(text: partTimeStart),
-                    onChanged: onPartTimeStartChanged,
+                    controller: _ptStartCtl,
+                    onChanged: widget.onPartTimeStartChanged,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: TextField(
                     decoration: const InputDecoration(labelText: 'PT End'),
-                    controller: TextEditingController(text: partTimeEnd),
-                    onChanged: onPartTimeEndChanged,
+                    controller: _ptEndCtl,
+                    onChanged: widget.onPartTimeEndChanged,
                   ),
                 ),
               ],
@@ -298,14 +343,14 @@ class _BasicInfoStep extends StatelessWidget {
             Wrap(
               spacing: 8,
               children: _dayOptions.map((day) {
-                final selected = partTimeDays.contains(day);
+                final selected = widget.partTimeDays.contains(day);
                 return FilterChip(
                   label: Text(day),
                   selected: selected,
                   onSelected: (sel) {
-                    final updated = List<String>.from(partTimeDays);
+                    final updated = List<String>.from(widget.partTimeDays);
                     sel ? updated.add(day) : updated.remove(day);
-                    onPartTimeDaysChanged(updated);
+                    widget.onPartTimeDaysChanged(updated);
                   },
                 );
               }).toList(),
@@ -317,15 +362,15 @@ class _BasicInfoStep extends StatelessWidget {
               const Text('Sleep target: '),
               Expanded(
                 child: Slider(
-                  value: sleepTarget,
+                  value: widget.sleepTarget,
                   min: 4,
                   max: 12,
                   divisions: 16,
-                  label: '${sleepTarget.toStringAsFixed(1)}h',
-                  onChanged: onSleepTargetChanged,
+                  label: '${widget.sleepTarget.toStringAsFixed(1)}h',
+                  onChanged: widget.onSleepTargetChanged,
                 ),
               ),
-              Text('${sleepTarget.toStringAsFixed(1)}h'),
+              Text('${widget.sleepTarget.toStringAsFixed(1)}h'),
             ],
           ),
         ],

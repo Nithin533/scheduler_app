@@ -35,5 +35,6 @@ class HabitNotifier extends StateNotifier<List<Habit>> {
       'log_date': date,
       'value': value,
     });
+    await loadHabits();
   }
 }

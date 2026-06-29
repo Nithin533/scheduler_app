@@ -70,14 +70,14 @@ class _HabitTrackerScreenState extends ConsumerState<HabitTrackerScreen> {
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Cancel')),
           FilledButton(
-            onPressed: () {
-              ref.read(habitProvider.notifier).createHabit({
+            onPressed: () async {
+              await ref.read(habitProvider.notifier).createHabit({
                 'name': nameCtl.text.trim(),
                 'target_value': double.tryParse(targetCtl.text),
                 'unit': selectedUnit.value,
                 'frequency': 'daily',
               });
-              Navigator.pop(ctx);
+              if (ctx.mounted) Navigator.pop(ctx);
             },
             child: const Text('Add'),
           ),

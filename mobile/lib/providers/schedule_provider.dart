@@ -40,23 +40,13 @@ class ScheduleNotifier extends StateNotifier<DailySchedule?> {
     }
   }
 
-  Future<void> confirmSchedule(int scheduleId) async {
+  Future<bool> confirmSchedule(int scheduleId) async {
     try {
       final res = await _api.post('/schedules/$scheduleId/confirm');
       state = DailySchedule.fromJson(res.data as Map<String, dynamic>);
+      return true;
     } catch (e) {
-      if (state != null && state!.id == scheduleId) {
-        state = DailySchedule(
-          id: state!.id,
-          userId: state!.userId,
-          scheduleDate: state!.scheduleDate,
-          isConfirmed: true,
-          totalFreeHours: state!.totalFreeHours,
-          totalScheduledHours: state!.totalScheduledHours,
-          isBalanced: state!.isBalanced,
-          items: state!.items,
-        );
-      }
+      return false;
     }
   }
 }

@@ -44,7 +44,7 @@ class Task {
     isFlexible: json['is_flexible'] as bool? ?? true,
     preferredTimeSlot: json['preferred_time_slot'] as String? ?? 'any',
     minTimesPerWeek: json['min_times_per_week'] as int?,
-    progress: double.parse(json['progress'].toString()),
+    progress: (json['progress'] as num?)?.toDouble() ?? 0.0,
     createdAt: DateTime.parse(json['created_at'] as String),
   );
 

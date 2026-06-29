@@ -1,3 +1,4 @@
+import 'dart:io';
 import '../models/user.dart';
 import '../services/api_client.dart';
 import '../services/secure_storage.dart';
@@ -51,7 +52,7 @@ class AuthService {
     try {
       await _api.post('/devices/register', data: {
         'fcm_token': token,
-        'platform': 'android',
+        'platform': Platform.isAndroid ? 'android' : 'ios',
       });
     } catch (e) {
       // Device registration failure is non-critical
