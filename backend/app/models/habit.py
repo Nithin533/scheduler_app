@@ -20,7 +20,7 @@ class Habit(Base):
     icon = Column(String(50))
     is_active = Column(Boolean, default=True)
 
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     user = relationship("User", back_populates="habits")
     logs = relationship("HabitLog", back_populates="habit", cascade="all, delete-orphan")
@@ -37,7 +37,7 @@ class HabitLog(Base):
     value = Column(DECIMAL(10, 2))
     notes = Column(Text)
 
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     habit = relationship("Habit", back_populates="logs")
 

@@ -13,9 +13,9 @@ class Reminder(Base):
 
     schedule_item_id = Column(Integer, ForeignKey("schedule_items.id", ondelete="CASCADE"))
 
-    reminder_time = Column(DateTime, nullable=False)
+    reminder_time = Column(DateTime(timezone=True), nullable=False)
     is_sent = Column(Boolean, default=False)
-    sent_at = Column(DateTime)
+    sent_at = Column(DateTime(timezone=True))
 
     type = Column(Enum(
         "pre_task", "bedtime", "habit", "daily_review", "wake_up",

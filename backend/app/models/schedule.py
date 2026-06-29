@@ -18,8 +18,8 @@ class DailySchedule(Base):
     total_scheduled_hours = Column(DECIMAL(4, 1))
     is_balanced = Column(Boolean, comment="health check passed")
 
-    generated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    generated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     user = relationship("User", back_populates="schedules")
     items = relationship("ScheduleItem", back_populates="schedule", cascade="all, delete-orphan")
@@ -34,8 +34,8 @@ class ScheduleItem(Base):
     schedule_id = Column(Integer, ForeignKey("daily_schedules.id", ondelete="CASCADE"), nullable=False)
 
     title = Column(String(200), nullable=False)
-    start_time = Column(DateTime, nullable=False)
-    end_time = Column(DateTime, nullable=False)
+    start_time = Column(DateTime(timezone=True), nullable=False)
+    end_time = Column(DateTime(timezone=True), nullable=False)
     duration_minutes = Column(Integer, nullable=False)
 
     item_type = Column(Enum(
@@ -49,10 +49,10 @@ class ScheduleItem(Base):
     habit_id = Column(Integer, ForeignKey("habits.id", ondelete="SET NULL"))
 
     status = Column(Enum("scheduled", "completed", "missed", "rescheduled", name="item_status"), nullable=False, default="scheduled")
-    completed_at = Column(DateTime)
+    completed_at = Column(DateTime(timezone=True))
     priority_at_schedule = Column(SmallInteger)
 
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     schedule = relationship("DailySchedule", back_populates="items")
     rescheduled_records = relationship("RescheduledItem", back_populates="schedule_item", cascade="all, delete-orphan")
@@ -68,6 +68,6 @@ class RescheduledItem(Base):
     rescheduled_to_date = Column(Date, nullable=False)
 
     reason = Column(Enum("not_completed", "conflict", "user_request", name="reschedule_reason"), nullable=False, default="not_completed")
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     schedule_item = relationship("ScheduleItem", back_populates="rescheduled_records")

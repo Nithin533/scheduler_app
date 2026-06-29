@@ -68,8 +68,8 @@ class SchedulerService:
 
         # Place fixed events
         for event in fixed_events:
-            event_start = datetime.combine(target_date, event.start_time)
-            event_end = datetime.combine(target_date, event.end_time)
+            event_start = datetime.combine(target_date, event.start_time, tzinfo=timezone.utc)
+            event_end = datetime.combine(target_date, event.end_time, tzinfo=timezone.utc)
 
             if event_start < current_time:
                 event_start = current_time

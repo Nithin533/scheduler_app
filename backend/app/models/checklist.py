@@ -14,9 +14,9 @@ class EndOfDayChecklist(Base):
     checklist_date = Column(Date, nullable=False)
 
     is_completed = Column(Boolean, default=False)
-    completed_at = Column(DateTime)
+    completed_at = Column(DateTime(timezone=True))
 
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     items = relationship("ChecklistItem", back_populates="checklist", cascade="all, delete-orphan")
 
@@ -32,6 +32,6 @@ class ChecklistItem(Base):
 
     title = Column(String(200), nullable=False)
     is_checked = Column(Boolean, default=False)
-    checked_at = Column(DateTime)
+    checked_at = Column(DateTime(timezone=True))
 
     checklist = relationship("EndOfDayChecklist", back_populates="items")

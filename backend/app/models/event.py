@@ -27,6 +27,6 @@ class FixedEvent(Base):
     color = Column(String(7), default="#3788d8")
     is_active = Column(Boolean, default=True)
 
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     user = relationship("User", back_populates="fixed_events")

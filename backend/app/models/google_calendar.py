@@ -12,8 +12,8 @@ class GoogleCalendarSync(Base):
 
     access_token = Column(Text)
     refresh_token = Column(Text)
-    token_expiry = Column(DateTime)
+    token_expiry = Column(DateTime(timezone=True))
 
     google_calendar_id = Column(String(255), default="primary")
-    last_synced_at = Column(DateTime)
+    last_synced_at = Column(DateTime(timezone=True))
     sync_enabled = Column(Boolean, default=True)
