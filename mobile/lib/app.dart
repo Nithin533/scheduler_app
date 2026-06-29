@@ -3,9 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'providers/auth_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
-import 'screens/onboarding/onboarding_wizard.dart';
 import 'screens/home/home_screen.dart';
-import 'screens/checklist/end_of_day_checklist_screen.dart';
 import 'services/notification_service.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();

@@ -152,7 +152,7 @@ class ScheduleTimeline extends StatelessWidget {
                   width: 20,
                   height: 20,
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.2),
+                    color: color.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                     border: Border.all(color: color, width: 2),
                   ),
@@ -162,7 +162,7 @@ class ScheduleTimeline extends StatelessWidget {
             ),
           ),
           // Timeline line
-          Container(width: 2, color: color.withOpacity(0.3), margin: const EdgeInsets.symmetric(horizontal: 4)),
+          Container(width: 2, color: color.withValues(alpha: 0.3), margin: const EdgeInsets.symmetric(horizontal: 4)),
           // Content
           Expanded(
             child: Card(
@@ -211,7 +211,7 @@ class ScheduleTimeline extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: colors[priority]?.withOpacity(0.2),
+        color: colors[priority]?.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/schedule.dart';
 import '../../providers/schedule_provider.dart';
 import '../../utils/date_helpers.dart';
 import '../../widgets/schedule_timeline.dart';

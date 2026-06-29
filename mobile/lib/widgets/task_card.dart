@@ -68,7 +68,7 @@ class TaskCard extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         child: ListTile(
           leading: CircleAvatar(
-            backgroundColor: _priorityColor(task.priority).withOpacity(0.2),
+            backgroundColor: _priorityColor(task.priority).withValues(alpha: 0.2),
             child: Icon(_categoryIcon(task.category),
                 color: _priorityColor(task.priority), size: 20),
           ),
@@ -88,7 +88,7 @@ class TaskCard extends StatelessWidget {
           trailing: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: _priorityColor(task.priority).withOpacity(0.15),
+              color: _priorityColor(task.priority).withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(

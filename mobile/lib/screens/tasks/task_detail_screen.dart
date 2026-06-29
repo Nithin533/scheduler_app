@@ -86,7 +86,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                 await ref
                     .read(taskProvider.notifier)
                     .deleteTask(widget.task!.id);
-                if (mounted) Navigator.pop(context);
+                if (context.mounted) Navigator.pop(context);
               },
             ),
         ],
@@ -145,7 +145,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
             Text('Category', style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: _category,
+              initialValue: _category,
               items: const [
                 DropdownMenuItem(value: 'academic', child: Text('Academic')),
                 DropdownMenuItem(value: 'work', child: Text('Work')),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/habit.dart';
 import '../providers/habit_provider.dart';
-import '../utils/date_helpers.dart';
 
 class HabitTile extends ConsumerWidget {
   final Habit habit;

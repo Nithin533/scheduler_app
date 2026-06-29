@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../services/auth_service.dart';
 import '../../providers/auth_provider.dart';
 import '../home/home_screen.dart';
 
@@ -666,8 +665,7 @@ class _GoalsStepState extends State<_GoalsStep> {
             ),
           ),
           const SizedBox(height: 16),
-          ...widget.longTermGoals
-              .map((g) => ListTile(
+          ...widget.longTermGoals.map((g) => ListTile(
                     title: Text(g['title'] as String),
                     subtitle: Text(
                         '${g['pages'] != null ? '${g['pages']} pages - ' : ''}Deadline: ${g['deadline'] ?? 'No deadline'}'),
@@ -678,8 +676,7 @@ class _GoalsStepState extends State<_GoalsStep> {
                         setState(() {});
                       },
                     ),
-                  ))
-              .toList(),
+                  )),
         ],
       ),
     );
@@ -775,8 +772,7 @@ class _DietStepState extends State<_DietStep> {
             ),
           ),
           const SizedBox(height: 16),
-          ...widget.dietItems
-              .map((d) => ListTile(
+          ...widget.dietItems.map((d) => ListTile(
                     title: Text(d['item'] as String),
                     subtitle: Text('Target: ${d['target']} ${d['unit']}'),
                     trailing: IconButton(
@@ -786,8 +782,7 @@ class _DietStepState extends State<_DietStep> {
                         setState(() {});
                       },
                     ),
-                  ))
-              .toList(),
+                  )),
         ],
       ),
     );

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/habit.dart';
 import '../../providers/habit_provider.dart';
 import '../../widgets/habit_tile.dart';
 

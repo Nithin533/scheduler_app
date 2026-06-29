@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/auth_provider.dart';
 import '../../providers/schedule_provider.dart';
 import '../../providers/checklist_provider.dart';
 import '../../utils/date_helpers.dart';
 import '../onboarding/onboarding_wizard.dart';
-import '../schedule/daily_schedule_screen.dart';
 import '../tasks/task_list_screen.dart';
 import '../habits/habit_tracker_screen.dart';
 import '../checklist/end_of_day_checklist_screen.dart';
