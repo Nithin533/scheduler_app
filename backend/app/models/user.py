@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, time, timezone
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, Time, DECIMAL, JSON, ForeignKey
 from sqlalchemy.orm import relationship
 
@@ -45,6 +45,8 @@ class UserProfile(Base):
     diet_tracking = Column(JSON)
 
     sleep_target_hours = Column(DECIMAL(3, 1), default=8.0)
+    bedtime = Column(Time, default=time(22, 30))
+    wake_time = Column(Time, default=time(6, 30))
 
     has_part_time_job = Column(Boolean, default=False)
     part_time_start = Column(Time)

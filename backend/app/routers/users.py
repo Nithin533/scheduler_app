@@ -1,3 +1,4 @@
+from datetime import time
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -7,6 +8,16 @@ from app.schemas.user import UserResponse, UserProfileCreate, UserProfileRespons
 from app.middleware.auth import get_current_user
 
 router = APIRouter()
+
+TIME_FIELDS = ("work_start_time", "work_end_time", "part_time_start", "part_time_end", "bedtime", "wake_time")
+
+
+def _parse_profile_payload(payload: UserProfileCreate) -> dict:
+    data = payload.model_dump(exclude_none=True)
+    for field in TIME_FIELDS:
+        if field in data and isinstance(data[field], str):
+            data[field] = time.fromisoformat(data[field])
+    return data
 
 
 @router.get("/me", response_model=UserResponse)
@@ -31,7 +42,7 @@ async def create_profile(
     if user.profile:
         raise HTTPException(status_code=400, detail="Profile already exists")
 
-    profile = UserProfile(user_id=user.id, **payload.model_dump(exclude_none=True))
+    profile = UserProfile(user_id=user.id, **_parse_profile_payload(payload))
     db.add(profile)
     await db.commit()
     await db.refresh(profile)
@@ -47,7 +58,7 @@ async def update_profile(
     if not user.profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
-    for key, value in payload.model_dump(exclude_none=True).items():
+    for key, value in _parse_profile_payload(payload).items():
         setattr(user.profile, key, value)
 
     await db.commit()

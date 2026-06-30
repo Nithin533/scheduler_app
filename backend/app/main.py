@@ -26,7 +26,6 @@ async def reminder_loop():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_db()
     task = asyncio.create_task(reminder_loop())
     yield
     task.cancel()
