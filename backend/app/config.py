@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import Field
 
 
 class Settings(BaseSettings):
@@ -13,10 +14,21 @@ class Settings(BaseSettings):
 
     firebase_credentials_path: str = ""
 
+    gemini_api_key: str = ""
+
     redis_url: str = "redis://localhost:6379/0"
+
+    cors_origins_raw: str = Field(default="*", alias="CORS_ORIGINS")
+
+    @property
+    def cors_origins(self) -> list[str]:
+        if self.cors_origins_raw.strip() == "*":
+            return ["*"]
+        return [origin.strip() for origin in self.cors_origins_raw.split(",") if origin.strip()]
 
     class Config:
         env_file = ".env"
+        populate_by_name = True
 
 
 settings = Settings()

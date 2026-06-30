@@ -7,6 +7,8 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models.user import User
 from app.models.checklist import EndOfDayChecklist, ChecklistItem
+from app.models.schedule import ScheduleItem
+from app.models.task import Task
 from app.schemas.checklist import CheckListResponse, ChecklistItemUpdate
 from app.middleware.auth import get_current_user
 
@@ -47,6 +49,25 @@ async def toggle_checklist_item(
 
     item.is_checked = payload.is_checked
     item.checked_at = datetime.now(timezone.utc) if payload.is_checked else None
+
+    # Keep the underlying Task in sync so the scheduler doesn't
+    # re-schedule something the user already marked done (or vice versa).
+    if item.schedule_item_id:
+        si_result = await db.execute(
+            select(ScheduleItem).where(ScheduleItem.id == item.schedule_item_id)
+        )
+        schedule_item = si_result.scalar_one_or_none()
+        if schedule_item and schedule_item.task_id:
+            task_result = await db.execute(
+                select(Task).where(Task.id == schedule_item.task_id)
+            )
+            task = task_result.scalar_one_or_none()
+            if task:
+                task.is_completed = payload.is_checked
+                schedule_item.status = "completed" if payload.is_checked else "scheduled"
+                schedule_item.completed_at = (
+                    datetime.now(timezone.utc) if payload.is_checked else None
+                )
 
     await db.commit()
 

@@ -17,11 +17,21 @@ class ReschedulerService:
         self.db = db
 
     async def reschedule_missed(self, user: User, checklist: EndOfDayChecklist):
-        """Reschedule all unchecked items to upcoming days."""
+        """Reschedule all unchecked items to upcoming days.
+
+        Completed items were already synced to Task.is_completed by the
+        checklist router, so generate_daily_schedule() will naturally skip
+        them. For items still unchecked, we bump the task's priority so it
+        surfaces first in the next schedule generation, and record the
+        move so the UI / weekly review can show what got pushed.
+        """
         unchecked_items = [
             item for item in checklist.items
             if not item.is_checked and item.schedule_item_id
         ]
+
+        target_day = checklist.checklist_date + timedelta(days=1)
+        bumped_task_ids: set[int] = set()
 
         for checklist_item in unchecked_items:
             schedule_item = await self._get_schedule_item(checklist_item.schedule_item_id)
@@ -31,45 +41,42 @@ class ReschedulerService:
             if schedule_item.item_type != "task":
                 continue
 
-            # Find original task
-            if not schedule_item.task_id:
+            if not schedule_item.task_id or schedule_item.task_id in bumped_task_ids:
                 continue
 
             task = await self._get_task(schedule_item.task_id)
-            if not task or not task.is_flexible:
+            if not task or not task.is_flexible or task.is_completed:
                 continue
 
-            # Schedule to next available day
-            max_days = 7
-            target_day = checklist.checklist_date + timedelta(days=1)
-            for day_offset in range(1, max_days + 1):
-                candidate = checklist.checklist_date + timedelta(days=day_offset)
-                if task.due_date and candidate > task.due_date:
-                    target_day = task.due_date
-                    break
-                if not task.due_date:
-                    target_day = candidate
-                    break
-                target_day = candidate
+            # Pick the actual target day: tomorrow, unless the task has an
+            # earlier due_date that's already in the past relative to that.
+            actual_target = target_day
+            if task.due_date and task.due_date < target_day:
+                actual_target = max(checklist.checklist_date, task.due_date)
 
-            # Record rescheduling
+            # Bump priority by one level (lower number = more urgent) so it
+            # is picked up before other pending tasks when we regenerate.
+            if task.priority > 1:
+                task.priority -= 1
+            bumped_task_ids.add(task.id)
+
+            # Mark the missed schedule item explicitly.
+            schedule_item.status = "missed"
+
             reschedule_record = RescheduledItem(
                 schedule_item_id=schedule_item.id,
                 original_date=checklist.checklist_date,
-                rescheduled_to_date=target_day,
+                rescheduled_to_date=actual_target,
                 reason="not_completed",
             )
             self.db.add(reschedule_record)
 
-            # Mark original item as rescheduled
-            schedule_item.status = "rescheduled"
-
         await self.db.commit()
 
-        # Regenerate next day's schedule
-        next_day = checklist.checklist_date + timedelta(days=1)
+        # Regenerate the next day's schedule — pending (incomplete) tasks,
+        # now bumped in priority, will be slotted in first.
         scheduler = SchedulerService(self.db)
-        await scheduler.generate_daily_schedule(user, next_day)
+        await scheduler.generate_daily_schedule(user, target_day)
 
     async def _get_schedule_item(self, item_id: int) -> ScheduleItem | None:
         result = await self.db.execute(

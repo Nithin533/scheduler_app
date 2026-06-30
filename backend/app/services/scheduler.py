@@ -11,6 +11,7 @@ from app.models.habit import Habit
 from app.models.schedule import DailySchedule, ScheduleItem
 from app.models.checklist import EndOfDayChecklist, ChecklistItem
 from app.models.reminder import Reminder
+from app.services.gemini_service import get_ai_task_ordering
 
 
 class SchedulerService:
@@ -34,14 +35,20 @@ class SchedulerService:
         # 4. Load habits
         habits = await self._get_active_habits(user.id)
 
-        # 5. Build time blocks
-        day_start = datetime.combine(target_date, time(6, 0), tzinfo=timezone.utc)   # 6 AM
-        day_end = datetime.combine(target_date, time(22, 0), tzinfo=timezone.utc)    # 10 PM
-        sleep_start = datetime.combine(target_date, time(22, 0), tzinfo=timezone.utc)
-        sleep_end = datetime.combine(target_date + timedelta(days=1), time(6, 0), tzinfo=timezone.utc)
+        # 5. Build time blocks — sleep window comes from the user's own
+        # profile instead of being hardcoded, so "Sleep and preferences"
+        # from onboarding actually has an effect.
+        wake_time = profile.wake_time or time(6, 30)
+        bedtime = profile.bedtime or time(22, 30)
+
+        day_start = datetime.combine(target_date, wake_time, tzinfo=timezone.utc)
+        sleep_start = datetime.combine(target_date, bedtime, tzinfo=timezone.utc)
+        if bedtime <= wake_time:
+            sleep_start = datetime.combine(target_date, bedtime, tzinfo=timezone.utc) + timedelta(days=1)
+        sleep_end = datetime.combine(target_date + timedelta(days=1), wake_time, tzinfo=timezone.utc)
+        day_end = sleep_start  # the day's active window runs until bedtime
 
         blocks: list[dict] = []
-        mandatory_block = False
 
         # Add sleep block
         blocks.append(self._make_block(
@@ -49,14 +56,28 @@ class SchedulerService:
             item_type="sleep"
         ))
 
-        # Add morning routine (bath 20min, breakfast 30min)
-        morning_routine_end = day_start + timedelta(minutes=50)
+        # Wind-down block — 20 minutes before bedtime, screens off
+        winddown_start = sleep_start - timedelta(minutes=20)
         blocks.append(self._make_block(
-            "morning_routine", "Morning Routine (Bath + Breakfast)",
-            day_start, morning_routine_end, item_type="meal"
+            "winddown", "Wind-down (no screens)", winddown_start, sleep_start,
+            item_type="break"
         ))
 
-        current_time = morning_routine_end
+        # Morning hygiene (shower/getting ready) — separate from breakfast
+        # so it's individually trackable.
+        hygiene_end = day_start + timedelta(minutes=20)
+        blocks.append(self._make_block(
+            "morning_hygiene", "Morning hygiene (shower, getting ready)",
+            day_start, hygiene_end, item_type="bath"
+        ))
+
+        # Breakfast — separate block from hygiene
+        breakfast_end = hygiene_end + timedelta(minutes=20)
+        blocks.append(self._make_block(
+            "breakfast", "Breakfast", hygiene_end, breakfast_end, item_type="meal"
+        ))
+
+        current_time = breakfast_end
 
         # Add commute if applicable
         if profile.commute_time_minutes and profile.commute_time_minutes > 0:
@@ -75,7 +96,6 @@ class SchedulerService:
                 event_start = current_time
 
             if event_end > event_start:
-                # Add gap before event if there's a gap
                 if event_start > current_time:
                     blocks.append(self._make_block(
                         "gap", "Free Time", current_time, event_start, item_type="free"
@@ -120,15 +140,52 @@ class SchedulerService:
         # Schedule remaining tasks in free time
         tasks_to_schedule = [t for t in tasks if not t.is_completed]
 
-        # Sort by priority (1 = highest)
+        # Reserve the last 30 minutes of the day for evening hygiene (10 min)
+        # + wind-down (20 min) so tasks don't crowd out bedtime prep.
+        evening_routine_minutes = 30
+        tasks_cutoff = sleep_start - timedelta(minutes=evening_routine_minutes)
+
+        # Sort by priority (1 = highest) as the guaranteed fallback —
+        # this line ALWAYS runs so the day is buildable even if Gemini
+        # is unreachable, unconfigured, or returns garbage.
         tasks_to_schedule.sort(key=lambda t: (t.priority, t.due_date or date.max))
 
+        # Ask Gemini to refine the ordering / selection given the actual
+        # free time available today. This never raises — on any failure
+        # it returns None and we keep the rule-based order above.
+        free_minutes_today = max(0, int((tasks_cutoff - current_time).total_seconds() / 60))
+        ai_ordering = await get_ai_task_ordering(
+            tasks=[
+                {
+                    "id": t.id,
+                    "title": t.title,
+                    "category": t.category,
+                    "priority": t.priority,
+                    "estimated_duration_minutes": t.estimated_duration_minutes,
+                    "due_date": t.due_date.isoformat() if t.due_date else None,
+                }
+                for t in tasks_to_schedule
+            ],
+            free_minutes_today=free_minutes_today,
+            target_date=target_date,
+            profile_summary={
+                "occupation": profile.occupation,
+                "hobbies": profile.hobbies or [],
+                "skills_learning": profile.skills_learning or [],
+            },
+        )
+        if ai_ordering:
+            tasks_by_id = {t.id: t for t in tasks_to_schedule}
+            reordered = [tasks_by_id[tid] for tid in ai_ordering if tid in tasks_by_id]
+            remaining = [t for t in tasks_to_schedule if t.id not in set(ai_ordering)]
+            tasks_to_schedule = reordered + remaining
+
         for task in tasks_to_schedule:
-            if current_time >= day_end - timedelta(hours=1):
+            if current_time >= tasks_cutoff - timedelta(hours=1):
                 break  # Not enough time left
 
             duration = timedelta(minutes=task.estimated_duration_minutes or 30)
-            task_end = min(current_time + duration, day_end)
+            task_end = min(current_time + duration, tasks_cutoff)
             task_duration = task_end - current_time
 
             if task_duration.total_seconds() < 300:  # Less than 5 min
@@ -146,12 +203,27 @@ class SchedulerService:
             current_time = task_end
 
             # Add short break (5 min) between tasks
-            if current_time < day_end - timedelta(minutes=10):
-                break_end = min(current_time + timedelta(minutes=5), day_end)
+            if current_time < tasks_cutoff - timedelta(minutes=10):
+                break_end = min(current_time + timedelta(minutes=5), tasks_cutoff)
                 blocks.append(self._make_block(
                     "break", "Short Break", current_time, break_end, item_type="break"
                 ))
                 current_time = break_end
+
+        # Evening hygiene — fills the gap between the last task and
+        # wind-down (brush teeth, skincare, lay out tomorrow's things).
+        evening_hygiene_start = max(current_time, sleep_start - timedelta(minutes=evening_routine_minutes))
+        evening_hygiene_end = sleep_start - timedelta(minutes=20)  # leaves 20 min for wind-down
+        if evening_hygiene_end > evening_hygiene_start:
+            if evening_hygiene_start > current_time:
+                blocks.append(self._make_block(
+                    "gap", "Free Time", current_time, evening_hygiene_start, item_type="free"
+                ))
+            blocks.append(self._make_block(
+                "evening_hygiene", "Evening hygiene (brush, skincare)",
+                evening_hygiene_start, evening_hygiene_end, item_type="bath"
+            ))
+            current_time = evening_hygiene_end
 
         # Create or update daily schedule
         existing_result = await self.db.execute(
@@ -164,9 +236,7 @@ class SchedulerService:
 
         if existing:
             schedule = existing
-            # Eagerly load items to avoid MissingGreenlet
             await self.db.refresh(schedule, ['items'])
-            # Remove old items
             for item in schedule.items:
                 await self.db.delete(item)
             schedule.items = []
@@ -179,7 +249,6 @@ class SchedulerService:
 
         await self.db.flush()
 
-        # Create schedule items
         total_scheduled = 0
         for block in blocks:
             item = ScheduleItem(
@@ -201,11 +270,10 @@ class SchedulerService:
         total_free = int((day_end - day_start).total_seconds() / 60)
         schedule.total_free_hours = round(total_free / 60, 1)
         schedule.total_scheduled_hours = round(total_scheduled / 60, 1)
-        schedule.is_balanced = total_scheduled <= total_free * 0.8  # Max 80% utilization
+        schedule.is_balanced = total_scheduled <= total_free * 0.8
 
         await self.db.commit()
 
-        # Reload with items eagerly loaded for response serialization
         result = await self.db.execute(
             select(DailySchedule)
             .where(DailySchedule.id == schedule.id)
@@ -213,16 +281,13 @@ class SchedulerService:
         )
         schedule = result.scalar_one()
 
-        # Generate end-of-day checklist
         await self._generate_checklist(user, schedule)
-
-        # Generate reminders
         await self._generate_reminders(user, schedule)
 
         return schedule
 
     async def _get_fixed_events(self, user_id: int, target_date: date) -> list[FixedEvent]:
-        weekday = (target_date.isoweekday() % 7)  # 0=Sun .. 6=Sat (matching DB convention)
+        weekday = (target_date.isoweekday() % 7)
         result = await self.db.execute(
             select(FixedEvent).where(
                 FixedEvent.user_id == user_id,
