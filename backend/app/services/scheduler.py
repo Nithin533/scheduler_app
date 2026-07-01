@@ -236,10 +236,11 @@ class SchedulerService:
 
         if existing:
             schedule = existing
-            await self.db.refresh(schedule, ['items'])
-            for item in schedule.items:
+            result = await self.db.execute(
+                select(ScheduleItem).where(ScheduleItem.schedule_id == schedule.id)
+            )
+            for item in result.scalars().all():
                 await self.db.delete(item)
-            schedule.items = []
         else:
             schedule = DailySchedule(
                 user_id=user.id,
@@ -248,6 +249,13 @@ class SchedulerService:
             self.db.add(schedule)
 
         await self.db.flush()
+
+        # Explicitly initialize the items list to avoid SQLAlchemy
+        # attempting a lazy load (which fails in async context) when
+        # we call schedule.items.append() below.
+        if not hasattr(schedule, '_items_initialized'):
+            from sqlalchemy.orm.attributes import set_committed_value
+            set_committed_value(schedule, 'items', [])
 
         total_scheduled = 0
         for block in blocks:
@@ -263,7 +271,7 @@ class SchedulerService:
                 habit_id=None,
                 priority_at_schedule=block.get("priority"),
             )
-            schedule.items.append(item)
+            self.db.add(item)
             if block["item_type"] not in ("sleep", "free"):
                 total_scheduled += item.duration_minutes
 

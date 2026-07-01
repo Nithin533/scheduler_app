@@ -9,19 +9,16 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-# Make the app package importable when alembic is run from backend/
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.config import settings
 from app.database import Base
-import app.models  # noqa: F401 — populates Base.metadata with every table
+import app.models  # noqa: F401
 
 config = context.config
 
-# Override the sqlalchemy.url from alembic.ini with the live app setting,
-# so a single DATABASE_URL env var drives both the app and migrations —
-# no need to duplicate the connection string in two places.
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# Escape % in the URL so configparser doesn't treat %40 as interpolation
+config.set_main_option("sqlalchemy.url", settings.database_url.replace("%", "%%"))
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
@@ -48,10 +45,14 @@ def do_run_migrations(connection: Connection) -> None:
 
 
 async def run_async_migrations() -> None:
+    # Pass statement_cache_size=0 here too — Alembic builds its own engine
+    # via async_engine_from_config, separate from the app's engine in
+    # database.py, so it needs the PgBouncer fix applied independently.
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args={"statement_cache_size": 0},
     )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
