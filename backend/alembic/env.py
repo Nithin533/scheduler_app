@@ -45,12 +45,14 @@ def do_run_migrations(connection: Connection) -> None:
 
 
 async def run_async_migrations() -> None:
-    # Pass statement_cache_size=0 here too — Alembic builds its own engine
-    # via async_engine_from_config, separate from the app's engine in
-    # database.py, so it needs the PgBouncer fix applied independently.
-    connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
+    from sqlalchemy.ext.asyncio import create_async_engine
+
+    # Build the engine directly from settings rather than going through
+    # async_engine_from_config, which reads alembic.ini via configparser
+    # and chokes on the % character in URL-encoded passwords even after
+    # the set_main_option escape above.
+    connectable = create_async_engine(
+        settings.database_url,
         poolclass=pool.NullPool,
         connect_args={"statement_cache_size": 0},
     )
